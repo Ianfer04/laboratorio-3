@@ -1,63 +1,67 @@
 import csv
+from collections import defaultdict
 
-class ProvinciaNoEncontrada(Exception):
-    """Excepción personalizada para provincias no encontradas en los datos."""
-    def __init__(self, nombre_provincia):
-        self.nombre_provincia = nombre_provincia
-        mensaje = f"No se encontró la provincia '{nombre_provincia}' en el conjunto de datos."
-        super().__init__(mensaje)
-
-class EstadisticasComerciales:
-    def __init__(self, ruta_csv):
-        self.ruta_csv = ruta_csv
-        self.registros = self._cargar_datos()
+class Analizador:
+    def __init__(self, archivo_csv):
+        self.archivo_csv = archivo_csv
+        self.datos = self._cargar_datos()
 
     def _cargar_datos(self):
-        """Carga los datos desde el archivo CSV, omitiendo las provincias 'ND'."""
-        registros = []
-        with open(self.ruta_csv, mode='r', encoding='ISO-8859-1') as archivo:
-            lector = csv.DictReader(archivo)
-            for linea in lector:
-                if linea.get('PROVINCIA') != 'ND':
-                    registros.append(linea)
-        return registros
+        datos = []
+        with open(self.archivo_csv, newline='', encoding='latin1') as csvfile:
+            lector = csv.DictReader(csvfile, delimiter=';')
+            print("Columnas encontradas:", lector.fieldnames)
+            for fila in lector:
+                datos.append(fila)
+        return datos
 
-    def calcular_ventas_por_provincia(self):
-        """Devuelve un diccionario con la suma de ventas por provincia."""
-        resumen_ventas = {}
-        for item in self.registros:
-            prov = item['PROVINCIA'].strip().upper()
-            total = float(item['TOTAL_VENTAS'])
-            resumen_ventas[prov] = resumen_ventas.get(prov, 0) + total
-        return resumen_ventas
+    def ventas_totales_por_provincia(self):
+        resumen = defaultdict(float)
+        for fila in self.datos:
+            provincia = fila['PROVINCIA']
+            try:
+                ventas = float(fila['TOTAL_VENTAS'].replace(',', '.'))
+            except (ValueError, KeyError):
+                ventas = 0.0
+            resumen[provincia] += ventas
+        return resumen
 
-    def obtener_ventas_de_provincia(self, provincia):
-        """Devuelve el total de ventas de una provincia específica."""
-        ventas = self.calcular_ventas_por_provincia()
-        clave = provincia.strip().upper()
-        if clave not in ventas:
-            raise ProvinciaNoEncontrada(provincia)
-        return ventas[clave]
+    def ventas_por_provincia(self, nombre):
+        nombre = nombre.strip().upper()
+        resumen = self.ventas_totales_por_provincia()
+        return resumen.get(nombre, 0.0)
+    
+    def exportaciones_totales_por_mes(self):
+        exportaciones_por_mes = defaultdict(float)
+        
+        for fila in self.datos:
+            mes = fila['MES']
+            valor_str = fila.get('EXPORTACIONES', '0').strip()
 
-    def resumen_exportaciones_mensuales(self):
-        """Devuelve un diccionario con el total de exportaciones por mes."""
-        exportaciones = {}
-        for item in self.registros:
-            mes = item['MES']
-            monto = float(item['EXPORTACIONES']) if item['EXPORTACIONES'] else 0.0
-            exportaciones[mes] = exportaciones.get(mes, 0) + monto
-        return exportaciones
+            try:
+                exportacion = float(valor_str.replace(',', '.'))
+            except ValueError:
+                exportacion = 0.0
 
-    def mayor_importadora(self):
-        """Devuelve la provincia con el mayor total de importaciones."""
-        importaciones = {}
-        for item in self.registros:
-            prov = item['PROVINCIA']
-            monto = float(item['IMPORTACIONES']) if item['IMPORTACIONES'] else 0.0
-            importaciones[prov] = importaciones.get(prov, 0) + monto
+            exportaciones_por_mes[mes] += exportacion
+            
+        return exportaciones_por_mes
 
-        if not importaciones:
-            raise ValueError("No hay registros de importaciones.")
+    def provincia_con_mayor_importacion(self):
+        importaciones_por_provincia = defaultdict(float)
+        
+        for fila in self.datos:
+            provincia = fila['PROVINCIA']
+            valor_str = fila.get('IMPORTACIONES', '0').strip()
 
-        provincia_top = max(importaciones, key=importaciones.get)
-        return provincia_top, importaciones[provincia_top]
+            try:
+                importacion = float(valor_str.replace(',', '.'))
+            except ValueError:
+                importacion = 0.0
+
+            importaciones_por_provincia[provincia] += importacion
+        
+        if not importaciones_por_provincia:
+            return ""
+            
+        return max(importaciones_por_provincia.items(), key=lambda x: x[1])[0]

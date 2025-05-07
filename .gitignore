@@ -1,44 +1,35 @@
-# Bytecode de Python
-_pycache_/
+# Ignorar entorno virtual
+venv/
+ENV/
+env/
+.venv/
+
+# Ignorar archivos de caché de Python
+__pycache__/
 *.py[cod]
 *$py.class
 
-# Entornos virtuales
-env/
-venv/
-ENV/
-.venv/
-
-# Archivos temporales del sistema
+# Archivos de configuración del sistema operativo
 .DS_Store
 Thumbs.db
 
-# Archivos de log
+# Archivos de logs y bases de datos temporales
 *.log
+*.sqlite3
 
-# Archivos de configuración del editor
+# Configuración del editor/IDE
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 
-# Archivos de pruebas y resultados
-.coverage
-htmlcov/
-.tox/
-.pytest_cache/
-
-# Archivos generados por herramientas de análisis
-.mypy_cache/
-.pytype/
-
-# Archivos de salida o temporales
-*.out
-*.tmp
+# Archivos de pruebas o temporales
 *.bak
+*.swp
+*.tmp
 
-# Datos locales no versionados
-data/*.xlsx
-data/*.csv
-
-# Otros archivos que quieras excluir manualmente
-*.zip
-*.tar.gz
+# Archivos de instalación
+*.egg
+*.egg-info/
+dist/
+build/

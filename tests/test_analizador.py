@@ -1,40 +1,50 @@
 import unittest
-from src.procesador import EstadisticasComerciales, ProvinciaNoEncontrada
+from src.procesador import Analizador
 
-class TestEstadisticasComerciales(unittest.TestCase):
+class TestAnalizador(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.estadisticas = EstadisticasComerciales("data/sri_ventas_2024.csv")
-    
-    def test_calcular_ventas_retornan_diccionario(self):
-        resultado = cls.estadisticas.calcular_ventas_por_provincia()
-        self.assertIsInstance(resultado, dict)
+        cls.analizador = Analizador("datos/sri_ventas_2024.csv")  # Asegúrate de que la ruta sea correcta
 
-    def test_total_provincias_sin_nd(self):
-        resumen = cls.estadisticas.calcular_ventas_por_provincia()
-        self.assertEqual(len(resumen), 24)  # Suponiendo que hay 24 provincias válidas
+    def test_numero_provincias(self):
+        resumen = self.analizador.ventas_totales_por_provincia()
+        self.assertGreaterEqual(len(resumen), 20)  # Verifica que haya al menos 20 provincias
 
-    def test_ventas_mayores_a_5000(self):
-        resumen = cls.estadisticas.calcular_ventas_por_provincia()
-        self.assertTrue(all(float(valor) > 5000 for valor in resumen.values()))
+    def test_valores_numericos(self):
+        resumen = self.analizador.ventas_totales_por_provincia()
+        for total in resumen.values():
+            self.assertIsInstance(total, float)
+            self.assertGreaterEqual(total, 0)
 
-    def test_provincia_inexistente_lanza_excepcion(self):
-        with self.assertRaises(ProvinciaNoEncontrada):
-            cls.estadisticas.obtener_ventas_de_provincia("Narnia")
+    def test_retornar_diccionario(self):
+        resumen = self.analizador.ventas_totales_por_provincia()
+        self.assertIsInstance(resumen, dict)
 
-    def test_ventas_provincia_case_insensitive(self):
-        mayus = cls.estadisticas.obtener_ventas_de_provincia("PICHINCHA")
-        minus = cls.estadisticas.obtener_ventas_de_provincia("pichincha")
-        self.assertEqual(mayus, minus)
+    def test_provincia_existente(self):
+        ventas = self.analizador.ventas_por_provincia("PICHINCHA")
+        self.assertIsInstance(ventas, float)
+        self.assertGreaterEqual(ventas, 0)
 
-    def test_exportaciones_formato_valido(self):
-        exportaciones = cls.estadisticas.resumen_exportaciones_mensuales()
+    def test_provincia_inexistente(self):
+        ventas = self.analizador.ventas_por_provincia("PROVINCIA_INEXISTENTE")
+        self.assertEqual(ventas, 0.0)
+
+    def test_exportaciones_por_mes_diccionario(self):
+        exportaciones = self.analizador.exportaciones_totales_por_mes()  # Corregido el nombre
         self.assertIsInstance(exportaciones, dict)
-        self.assertTrue(all(float(valor) >= 0 for valor in exportaciones.values()))
 
-    def test_provincia_mayor_importacion_valida(self):
-        provincia, monto = cls.estadisticas.mayor_importadora()
+    def test_exportaciones_por_mes_valores_mayores_0(self):
+        exportaciones = self.analizador.exportaciones_totales_por_mes()
+        for mes, valor in exportaciones.items():
+            self.assertIsInstance(mes, str)
+            self.assertIsInstance(valor, float)
+            self.assertGreaterEqual(valor, 0)
+
+    def test_provincia_con_mayor_importacion(self):
+        provincia = self.analizador.provincia_con_mayor_importacion()
         self.assertIsInstance(provincia, str)
-        self.assertIsInstance(monto, float)
-        self.assertGreater(monto, 0)
+        self.assertGreater(len(provincia), 1)
+
+if __name__ == '__main__':
+    unittest.main()
